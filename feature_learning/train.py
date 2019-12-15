@@ -69,7 +69,7 @@ parser.add_argument(
 	'--cuda', action='store_true', help='cuda setting')
 
 parser.add_argument(
-	'--nbSearchImgEpoch', type=int, default = 2000, help='maximum number of searching image in one epoch')
+	'--nbSearchImgEpoch', type=int, default = 200, help='maximum number of searching image in one epoch')
 
 parser.add_argument(
 	'--featScaleBase', type=int, default = 20, help='number of features in the max dimension of the minimum scale')
@@ -146,14 +146,13 @@ for i_ in range(args.nbEpoch) :
 	else :
 		index = np.random.permutation(np.arange(len(imgList)))[:args.nbSearchImgEpoch]
 		searchImgList = [imgList[i] for i in index]
-
 	featQuery = outils.RandomQueryFeat(nbPatchTotal, featChannel, args.searchRegion, imgFeatMin, minNet, strideNet, transform, net, args.searchDir, args.margin, searchImgList, args.cuda, args.queryScale)
-
 	print '---> Get top10 patches matching to query...'
 	topkImg, topkScale, topkValue, topkW, topkH = outils.RetrievalRes(nbPatchTotal, searchImgList, args.searchDir, args.margin, args.searchRegion, scales, minNet, strideNet, transform, net, featQuery, args.cuda)
 
 	print '---> Get training pairs...'
 
+	st()
 
 	posPair, _ = outils.TrainPair(nbPatchTotal, args.searchDir, searchImgList, topkImg, topkScale, topkW, topkH, transform, net, args.margin, args.cuda, featChannel, args.searchRegion, args.validRegion, args.nbImgEpoch, minNet, strideNet)
 	#posPair, _ = outils.TrainPair(args.searchDir, searchImgList, topkImg, topkScale, topkW, topkH, transform, net, args.margin, args.cuda, featChannel, args.searchRegion, args.validRegion, args.nbImgEpoch, minNet, strideNet)

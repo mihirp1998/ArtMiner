@@ -6,6 +6,8 @@ from itertools import product
 from torch.autograd import Variable
 import torch.nn.functional as F
 from tqdm import tqdm
+import ipdb 
+st = ipdb.set_trace
 
 ## Each image in the searching dataset will be resized
 ## The function below defines maximum dimensions in the feature map for different scales
@@ -55,7 +57,6 @@ def RandomQueryFeat(nbPatchTotal, featChannel, searchRegion, imgFeatMin, minNet,
 	for (i, img_name) in tqdm(img_sampler.loop()) :
 		if count == nbPatchTotal :
 			break
-
 		## resize image
 		I = Image.open(os.path.join(searchDir, img_name)).convert('RGB')
 		w,h = I.size
@@ -206,11 +207,9 @@ def RetrievalRes(nbPatchTotal, imgList, searchDir, margin, searchRegion, scales,
 	resW = torch.zeros((nbPatchTotal, len(imgList))).cuda() if useGpu else torch.zeros((nbPatchTotal, len(imgList)))     # feat_w
 	resH = torch.zeros((nbPatchTotal, len(imgList))).cuda() if useGpu else torch.zeros((nbPatchTotal, len(imgList)))     # feat_h
 	resScore = torch.zeros((nbPatchTotal, len(imgList))).cuda() if useGpu else torch.zeros((nbPatchTotal, len(imgList))) # score
-
 	variableAllOne =  Variable(torch.ones(1, featQuery.size()[1], featQuery.size()[2], featQuery.size()[3])).cuda()
 
 	for i in tqdm(range(len(imgList))) :
-
 		search_name = imgList[i]
 		searchFeat = SearchImgFeat(searchDir, margin, searchRegion, scales, minNet, strideNet, transform, net, search_name, useGpu)
 
@@ -239,12 +238,13 @@ def RetrievalRes(nbPatchTotal, imgList, searchDir, margin, searchRegion, scales,
 
 		# Update res matrix, only keep top 10
 		resScore[:, i] = tmpScore
-		resScale[:, i] = torch.gather(tmpScale, 1, tmpScaleIndex)
-		resW[:, i] = torch.gather(tmpW, 1, tmpScaleIndex)
-		resH[:, i] = torch.gather(tmpH, 1, tmpScaleIndex)
+		resScale[:, i] = torch.gather(tmpScale, 1, tmpScaleIndex).squeeze()
+		resW[:, i] = torch.gather(tmpW, 1, tmpScaleIndex).squeeze()
+		resH[:, i] = torch.gather(tmpH, 1, tmpScaleIndex).squeeze()
 
 	# Get Topk Matrix
 	topkValue, topkImg = resScore.topk(k = 10, dim = 1) ## Take Top10 pairs
+
 	topkScale = torch.gather(resScale, 1, topkImg)
 	topkW = torch.gather(resW, 1, topkImg)
 	topkH = torch.gather(resH, 1, topkImg)
